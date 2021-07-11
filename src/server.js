@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
+const Jwt = require('@hapi/jwt');
 //songs
 const songs = require('./api/songs');
 const SongsValidator = require('./validator/songs');
@@ -53,6 +54,31 @@ const init = async () => {
         return response.continue || response;
     });
 
+    // registrasi plugin eksternal
+    await server.register([
+        {
+            plugin: Jwt,
+        },
+    ]);
+
+    // Mendefinisikan strategy authentication jwt
+    server.auth.strategy('musicapps_jwt', 'jwt', {
+        keys: process.env.ACCESS_TOKEN_KEY,
+        verify: {
+            aud: false,
+            iss: false,
+            sub: false,
+            maxAgeSec: process.env.ACCESS_TOKEN_AGE,      
+        },
+        validate: (artifacts) => ({
+            isValid: true,
+            credentials: {
+                id: artifacts.decoded.payload.id,
+            },
+        }),
+    });
+
+    //register all plugin internal
     await server.register([
         {
             plugin: songs,
