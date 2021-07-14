@@ -1,4 +1,3 @@
-const AuthenticationsService = require('../services/postgres/AuthenticationsService');
 const ClientError = require('./ClientError');
 
 class AuthenticationError extends ClientError {
