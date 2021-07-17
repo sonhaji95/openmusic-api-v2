@@ -11,7 +11,7 @@ class SongsService {
 
     //addSong
     async addSong({ title, year, performer, genre, duration}) {
-        const id = "song-" + nanoid(16);
+        const id = `song-${nanoid(16)}`;
         const insertedAt = new Date().toISOString();
         const  updatedAt = insertedAt;
 
@@ -19,7 +19,8 @@ class SongsService {
             text: 'INSERT INTO songs VALUES($1, $2, $3, $4, $5, $6, $7, $8)RETURNING id',
             values: [id, title, year, performer, genre, duration, insertedAt, updatedAt],
         };
-        console.log(query.values);
+
+        //console.log(query.values);
         const result = await this._pool.query(query);
         if (!result.rows[0].id) {
             throw new InvariantError('Lagu gagal ditambahkan');
@@ -31,6 +32,7 @@ class SongsService {
     async getSongs(){
         const result = await this._pool.query('SELECT id, title, performer FROM songs');
         return result.rows;
+        //return result.rows.map(mapDBToModel);
     }
 
     //get song id
@@ -40,9 +42,7 @@ class SongsService {
             values: [id],
         };
         const result = await this._pool.query(query);
-        //menggunakan result.rowCount untuk menggantikan penggunaan result.rows.length
-        //karena sintaknya lebih singkat
-        /*if (!result.rows.length) {*/
+
             if (!result.rowCount){
             throw new NotFoundError('Lagu tidak ditemukan');
         }

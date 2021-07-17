@@ -2,6 +2,7 @@ const { nanoid } = require("nanoid");
 const { Pool } = require("pg");
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
+const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsService {
     constructor(collaborationService) {
@@ -25,13 +26,14 @@ class PlaylistsService {
         return result.rows[0].id;
     }
 
-    async getPlaylists(user) {
+    async getPlaylists(owner) {
         const query = {
             text: `SELECT playlists.id, playlists.name, users.username FROM playlists 
             LEFT JOIN users ON users.id = playlists.owner 
-            LEFT JOIN collaborations ON playlists.id = collaborations.playlists_id
-            WHERE playlists.owner = $1 OR collaborations.user_id = $1;`,
-            values: [user],
+            LEFT JOIN collaborators ON collaborators.playlist_id = playlists.id
+            WHERE playlists.owner = $1 OR collaborators.user_id = $1
+            GROUP BY playlists.id, users.username`,
+            values: [owner],
         };
 
         const result = await this._pool.query(query);
@@ -51,10 +53,12 @@ class PlaylistsService {
         };
     }
 
-    async addSongTopPlaylist(playlistId, songId) {
+    async addSongToPlaylist(playlistId, songId) {
+        const id = `playlistsong-${nanoid(16)}`;
+
         const query = {
-            text: 'INSERT INTO playlistsongs (playlist_id, song_id) VALUES($1, $2) RETURNING id',
-            values: [playlistId, songId],
+            text: 'INSERT INTO playlistsongs VALUES($1, $2, $3) RETURNING id',
+            values: [id, playlistId, songId],
         };
 
         const result = await this._pool.query(query);
@@ -66,9 +70,8 @@ class PlaylistsService {
 
     async getSongsFromPlaylist(playlistId) {
         const query = {
-            text: `SELECT songs.id, songs.title, songs.performer FROM songs
-            JOIN playlistssongs
-            ON songs.id = playlistsongs.song_id WHERE playlistsongs.playlist_id = $1`,
+            text: `SELECT songs.id, songs.title, songs.performer FROM playlistsongs
+            LEFT JOIN songs ON songs.id = playlistsongs.song_id WHERE playlistsongs.playlist_id = $1`,
             values: [playlistId],
         };
 
@@ -84,7 +87,7 @@ class PlaylistsService {
 
         const result = await this._pool.query(query);
         if (!result.rowCount) {
-            throw new InvariantError('Lagu gagal dihapus');
+            throw new InvariantError('Lagu gagal dihapus dari playlist. Id tidak ditemukan');
         }
     }
 
@@ -94,12 +97,14 @@ class PlaylistsService {
             values: [id],
         };
         const result = await this._pool.query(query);
+
         if (!result.rowCount) {
-            throw new NotFoundError('Playlist tidak ditemukan');
+            throw new NotFoundError('Resource Playlist tidak ditemukan');
         }
         
         const playlist = result.rows[0];
         if (playlist.owner !== owner) {
+            console.log('Forbidden!');
             throw new AuthorizationError('Anda tidak berhak mengakses resource ini.');
         }
     }
@@ -119,15 +124,15 @@ class PlaylistsService {
         }
     }
 
-    async getUsersByUsername(username) {
-        const query = {
-            text: 'SELECT id, username, fullname FROM users WHERE username LIKE $1',
-            values: [`%${username}%`],
-        };
+    // async getUsersByUsername(username) {
+    //     const query = {
+    //         text: 'SELECT id, username, fullname FROM users WHERE username LIKE $1',
+    //         values: [`%${username}%`],
+    //     };
 
-        const result = await this._pool.query(query);
-        return result.rows;
-    }
+    //     const result = await this._pool.query(query);
+    //     return result.rows;
+    // }
 }
 
 module.exports = PlaylistsService;

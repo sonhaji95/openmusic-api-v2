@@ -9,7 +9,7 @@ exports.up = (pgm) => {
             primaryKey: true,
         },
         name: {
-            type: 'TEXT',
+            type: 'VARCHAR(50)',
             notNull: true,
         },
         owner: {
@@ -18,7 +18,7 @@ exports.up = (pgm) => {
         },
     });
 
-    pgm.addConstraint('playlists', 'fk_playlists.owner_users.id', 'FOREIGN KEY(owner) REFERENCES users(id) ON DELETE CASCADE');
+    /*pgm.addConstraint('playlists', 'fk_playlists.owner_users.id', 'FOREIGN KEY(owner) REFERENCES users(id) ON DELETE CASCADE');*/
 };
 
 exports.down = (pgm) => {

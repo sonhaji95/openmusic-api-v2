@@ -19,9 +19,9 @@ class UsersService {
         const hashedPassword = await bcrypt.hash(password, 10);
         const query = {
             text: 'INSERT INTO users VALUES($1, $2, $3, $4) RETURNING id',
-            values: [id, username, hashedPassword, fullname],
+            values: [id, username, fullname, hashedPassword],
         };
-        console.log(query.values);
+        //console.log(query.values);
 
         const result = await this._pool.query(query);
         if (!result.rowCount) {
@@ -33,7 +33,7 @@ class UsersService {
     //verivikasi user baru
     async verifyNewUsername(username) {
         const query = {
-            text: 'SELECT username FROM users WHERE id = $1 ',
+            text: 'SELECT username FROM users WHERE  username = $1 ',
             values: [username],
         };
 
