@@ -15,13 +15,14 @@ class CollaborationsHandler {
     async postCollaborationHandler(request, h) {
         try {
             this._validator.validateCallobortionPayload(request.payload);
-            const { id: credentialId } = request.auth.credentials;
             const { playlistId, userId } = request.payload;
+            const { id: credentialId } = request.auth.credentials;
 
             await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
+            const collaborationId = await this._collaborationsService.addUserToCollaboration(playlistId, userId);
             const response = h.response({
                 status: 'success',
-                message: 'Kolaborasi berhasil ditambahkan',
+                message: 'User kolaborasi berhasil ditambahkan',
                 data: {
                     collaborationId,
                 },
@@ -54,14 +55,14 @@ class CollaborationsHandler {
     async deleteCollaborationHandler(request, h) {
         try {
             this._validator.validateCollaborationPayload(request.payload);
-            const { id: credentialId } = request.auth.credentials;
             const { playlistId, userId } = request.payload;
+            const { id: credentialId } = request.auth.credentials;
 
             await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
-            await this._collaborationsService.deleteCollaboration(playlistId, userId);
+            await this._collaborationsService.deleteUserFromCollaboration(playlistId, userId);
             return {
                 status: 'success',
-                message: 'Kolaborasi berhasil dihapus',
+                message: 'User kolaborasi berhasil dihapus',
             };
         } catch (error) {
             if (error instanceof ClientError) {

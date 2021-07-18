@@ -4,6 +4,13 @@ class PlaylistsHandler {
     constructor(service, validator) {
         this._service = service;
         this._validator = validator;
+
+        //binding
+        this.postPlaylistHandler = this.postPlaylistHandler.bind(this);
+        this.getPlaylistsHandler = this.getPlaylistsHandler.bind(this);
+        this.deletePlaylistByIdHandler = this.deletePlaylistByIdHandler.bind(this);
+        this.postSongHandler = this.postSongHandler.bind(this);
+        this.getUsersByUsernameHandler = this.getUsersByUsernameHandler.bind(this);
     }
 
     //post playlist
@@ -49,15 +56,35 @@ class PlaylistsHandler {
 
     // get playlists
     async getPlaylistsHandler(request) {
+        try {
         const { id: credentialId } = request.auth.credentials;
-        const playlist = await this._service.getPlaylists(credentialId);
+        const playlists = await this._service.getPlaylists(credentialId);
         return {
             status: 'success',
             data: {
-                playlist,
+                playlists,
             },
         };
+    } catch (error) {
+        if (error instanceof ClientError) {
+            const response = h.response({
+                status: 'fail',
+                message: error.message,
+            });
+            response.code(error.statusCode);
+            return response;
+        };
+
+        //SERVER ERROR
+        const response = h.response({
+            status: 'error',
+            message: 'Maaf, terjadi kegagalan pada server kami.',
+        });
+        response.code(500);
+        console.error(error);
+        return response;
     }
+}
 
     //delete playlist
     async deletePlaylistByIdHandler(request, h) {
@@ -92,10 +119,10 @@ class PlaylistsHandler {
         }
     }
 
-    //post song
-    async postSongHandler(request, h) {
+    //post song to playlist
+    async postSongToPlaylistHandler(request, h) {
         try {
-            this._validator.validatePostSongPayload(request.payload);
+            this._validator.validatePostSongPlaylistPayload(request.payload);
             const { playlistId } = request.params;
             const { songId } = request.payload;
             const { id: credentialId } = request.auth.credentials;
@@ -130,14 +157,14 @@ class PlaylistsHandler {
         }
     }
 
-    //get song
-    async getSongsHandler(request, h) {
+    //get songs from playlist
+    async getSongsFromPlaylistHandler(request, h) {
         try {
             const { playlistId } = request.params;
             const { id: credentialId } = request.auth.credentials;
 
             await this._service.verifyPlaylistAccess(playlistId, credentialId);
-            const  songs = await this._service.getSongsFromPlsylist(playlistId);
+            const  songs = await this._service.getSongsFromPlaylist(playlistId);
             return {
                 status: 'success',
                 data: {
@@ -165,8 +192,8 @@ class PlaylistsHandler {
         }
     }
 
-    //delete song
-    async deleteSongByIdHandler(request, h) {
+    //delete song to playlist
+    async deleteSongToPlaylistHandler(request, h) {
     try {
       const { playlistId } = request.params;
       const { songId } = request.payload;

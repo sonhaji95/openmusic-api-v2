@@ -13,7 +13,7 @@ class CollaborationsService {
         const id = `collab-${nanoid(16)}`;
 
         const query = {
-            text: 'INSERT INTO collaborators VALUES($1, $2, $3) RETURNING id',
+            text: 'INSERT INTO collaborations VALUES($1, $2, $3) RETURNING id',
             values: [id, playlistId, userId],
         };
         const result = await this._pool.query(query);
@@ -27,7 +27,7 @@ class CollaborationsService {
     //Delete User Calloborasi
     async deleteUserFromCollaboration(playlistId, userId) {
         const query = {
-            text: 'DELETE FROM collaborators WHERE playlist_id = $1 AND user_id = $2 RETURNING id',
+            text: 'DELETE FROM collaborations WHERE playlist_id = $1 AND user_id = $2 RETURNING id',
             values: [playlistId, userId],
         };
         const result = await this._pool.query(query);
@@ -39,7 +39,7 @@ class CollaborationsService {
     //Verivikasi Calloborasi
     async verifyCollaborator(playlistId, collaborator) {
         const query = {
-            text: 'SELECT * FROM collaborators WHERE playlist_id = $1 AND user_id = $2',
+            text: 'SELECT * FROM collaborations WHERE playlist_id = $1 AND user_id = $2',
             values: [playlistId, collaborator],
         };
         const result = await this._pool.query(query);

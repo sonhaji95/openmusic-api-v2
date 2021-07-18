@@ -26,14 +26,14 @@ class PlaylistsService {
         return result.rows[0].id;
     }
 
-    async getPlaylists(owner) {
+    async getPlaylists(user) {
         const query = {
             text: `SELECT playlists.id, playlists.name, users.username FROM playlists 
             LEFT JOIN users ON users.id = playlists.owner 
-            LEFT JOIN collaborators ON collaborators.playlist_id = playlists.id
-            WHERE playlists.owner = $1 OR collaborators.user_id = $1
+            LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id
+            WHERE playlists.owner = $1 OR collaborations.user_id = $1
             GROUP BY playlists.id, users.username`,
-            values: [owner],
+            values: [user],
         };
 
         const result = await this._pool.query(query);
@@ -57,7 +57,7 @@ class PlaylistsService {
         const id = `playlistsong-${nanoid(16)}`;
 
         const query = {
-            text: 'INSERT INTO playlistsongs VALUES($1, $2, $3) RETURNING id',
+            text: 'INSERT INTO playlistsongs (id, playlist_id, song_id) VALUES($1, $2, $3) RETURNING id',
             values: [id, playlistId, songId],
         };
 
@@ -70,8 +70,8 @@ class PlaylistsService {
 
     async getSongsFromPlaylist(playlistId) {
         const query = {
-            text: `SELECT songs.id, songs.title, songs.performer FROM playlistsongs
-            LEFT JOIN songs ON songs.id = playlistsongs.song_id WHERE playlistsongs.playlist_id = $1`,
+            text: `SELECT songs.id, songs.title, songs.performer FROM songs
+                    JOIN playlistsongs ON songs.id = playlistsongs.song_id WHERE playlistsongs.playlist_id = $1`,
             values: [playlistId],
         };
 
@@ -99,7 +99,7 @@ class PlaylistsService {
         const result = await this._pool.query(query);
 
         if (!result.rowCount) {
-            throw new NotFoundError('Resource Playlist tidak ditemukan');
+            throw new NotFoundError('Playlist tidak ditemukan');
         }
         
         const playlist = result.rows[0];
@@ -124,15 +124,15 @@ class PlaylistsService {
         }
     }
 
-    // async getUsersByUsername(username) {
-    //     const query = {
-    //         text: 'SELECT id, username, fullname FROM users WHERE username LIKE $1',
-    //         values: [`%${username}%`],
-    //     };
+    async getUsersByUsername(username) {
+        const query = {
+            text: 'SELECT id, username, fullname FROM users WHERE username LIKE $1',
+            values: [`%${username}%`],
+        };
 
-    //     const result = await this._pool.query(query);
-    //     return result.rows;
-    // }
+        const result = await this._pool.query(query);
+        return result.rows;
+    }
 }
 
 module.exports = PlaylistsService;
